@@ -7,7 +7,13 @@ function! s:activate_autocmds(bufnr)
     augroup ScratchAutoHide
       autocmd!
       execute 'autocmd WinEnter <buffer=' . a:bufnr . '> nested call <SID>close_window(0)'
-      execute 'autocmd Winleave <buffer=' . a:bufnr . '> nested call <SID>close_window(1)'
+      execute 'autocmd WinLeave <buffer=' . a:bufnr . '> nested call <SID>close_window(1)'
+    augroup END
+  else
+    augroup SaveScratch
+      autocmd!
+      execute 'autocmd BufLeave <buffer=' . a:bufnr . '> nested call <SID>save_scratch()'
+      execute 'autocmd VimLeavePre <buffer=' . a:bufnr . '> nested call <SID>save_scratch()'
     augroup END
   endif
 endfunction
@@ -58,11 +64,17 @@ function! s:open_window(position)
   endif
 endfunction
 
-function! s:close_window(force)
-  " close scratch window if it is the last window open, or if force
+function! s:save_scratch()
+  " saves scratch to file
   if strlen(g:scratch_persistence_file) > 0
     execute ':w! ' . g:scratch_persistence_file
   endif
+endfunction
+
+function! s:close_window(force)
+  " close scratch window if it is the last window open, or if force
+  call s:save_scratch()
+
   if a:force
     let prev_bufnr = bufnr('#')
     let scr_bufnr = bufnr('__Scratch__')
